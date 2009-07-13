@@ -1,0 +1,48 @@
+#!/usr/local/bin/python
+
+"""Returns the number om milliseconds it took to access an url."""
+
+import urllib2
+import sys
+import os
+import os.path
+import re
+import signal
+import time
+
+def main():
+    """Contains all usefull work."""
+
+    hostname = '.'.join(os.path.basename(sys.argv[0]).split('_')[1:])
+    name = hostname.replace('.', '_')
+    name = hostname.replace('.', '_')
+    if 'url' in os.environ:
+        url = os.environ['url']
+    else:
+       url = "http://%s/jobs/" % hostname
+    #                      Showing 1 of 1 active job
+    jobs_re = re.compile(r'Showing \d* of (\d+) active job')
+
+    
+    if sys.argv[-1] == "config":
+        print "graph_title activecups jobs on %s:" % hostname
+        print 'graph_vlabel ms'
+        print 'graph_args --lower-limit 0'
+        print 'graph_category network'
+        print '%s.label %s' % (name, url)
+        print "%s.critical 50" % (name,)
+        print "%s.critical 500" % (name,)
+
+    else:
+        # ensure there is a timeout after 10 seconds
+        signal.alarm(10)
+        page = urllib2.urlopen(url).read()
+        signal.alarm(0)
+        m = jobs_re.search(page)
+        if m:
+            print "%s.value %s" % (name, m.groups()[0])
+        else:
+            print "%s.value %s" % (name, 0)
+            
+
+main()

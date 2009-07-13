@@ -1,0 +1,48 @@
+#!/usr/local/bin/python
+
+"""Returns the number om milliseconds it took to access an url."""
+
+import urllib2
+import sys
+import os
+import os.path
+import signal
+import time
+
+def main():
+    """Contains all usefull work."""
+
+    url = "http://localhost:8000/info"
+    name = 'odbc_bridge'
+    data = urllib2.urlopen(url).read()
+    data = dict([(y[0], int(y[1])) for y in [x.split(':') for x in [line for line in data.split('\n') if line]]])
+    
+    if sys.argv[-1] == "config":
+        print "graph_title odbc_adapter"
+        print 'graph_args --lower-limit 0'
+        print 'graph_category other'
+        print "read_error.graph_period minute"
+        print "read_error.type COUNTER"
+        print "read_reconnects.graph_period minute"
+        print "read_reconnects.type COUNTER"
+        print "read_success.graph_period minute"
+        print "read_success.type COUNTER"
+        print "write_error.graph_period minute"
+        print "write_error.type COUNTER"
+        print "write_reconnects.graph_period minute"
+        print "write_reconnects.type COUNTER"
+        print "write_success.graph_period minute"
+        print "write_success.type COUNTER"
+        for key, value in sorted(data.items()):
+            print "%s.label %s" % (key, key[:12])
+
+
+    else:
+        # ensure there is a timeout after 10 seconds
+        for key, value in sorted(data.items()):
+            if key.endswith('latency'):
+                value = int(value)//1000
+            print "%s.value %s" % (key, value)
+
+main()
+

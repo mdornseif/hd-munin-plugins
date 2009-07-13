@@ -1,0 +1,38 @@
+#!/usr/local/bin/python
+"""Munin Plugin fuer myPL statistiken"""
+
+import os
+import sys
+import tempfile
+os.environ['PYTHON_EGG_CACHE'] = tempfile.gettempdir() + '/egg_cache'
+
+import simplejson
+import socket
+
+
+try:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('hurricane.local.hudora.biz', 1919))
+    header = sock.makefile().readline().strip()
+    if not header.startswith("200 "):
+        raise RuntimeError, "Error reading header: %r" % header
+    sock.send('statistics\n')    
+    data = sock.makefile().readline().strip()
+    data = data[4:]
+    data = simplejson.loads(data)
+except socket.error:
+    # we ignore errors
+    data = []
+data.sort()
+
+if sys.argv[-1] == "config":
+    print "graph_title myPL/kernelE"
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    for name, value in data:
+        print "%s.label %s" % (name, name)
+else:
+    for name, value in data:
+        print "%s.value %s" % (name, value)
+    
+sys.exit(0)

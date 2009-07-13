@@ -1,0 +1,61 @@
+#!/usr/local/bin/python
+
+"""Munin Plugin fuer offene Vorgaenge in SoftM-Schnittstellen mit timestamp"""
+
+import os
+import sys
+import time
+import anydbm
+import datetime
+import simplejson as json
+import urllib
+import httplib
+
+max_time_in_schnittstelle = (24*60*60)+1 # == 24h
+
+db = anydbm.open('/tmp/munin_stapelschnittstelle_cache.db', 'c')
+
+tables = {'ISA00': "SELECT IADATE, IATIME FROM SMKDIFP.ISA00 WHERE IASTAT<>'X'",
+          'ISK00': "SELECT IKDATE, IKTIME FROM SMKDIFP.ISK00 WHERE IKSTAT<>'X'",
+          'ISZ00': "SELECT IZDTWZ, IZTIME FROM SMKDIFP.ISZ00 WHERE IZSTAT<>'X'"}
+
+def execute(sqlstr):
+    param = urllib.quote(sqlstr)
+    conn = httplib.HTTPConnection("localhost:8000")
+    conn.request("GET", "/select?query=" + param)  
+    response = conn.getresponse()
+    if response.status != 200:   
+        errorinfo = response.read()
+        raise RuntimeError("Server Error: %r" % errorinfo)
+    return json.loads(response.read())
+
+
+haenger = {}
+offen = {}
+for table, query in tables.items():
+  offen[table] = 0
+  haenger[table] = 0
+  for row in execute(query):
+    rdate, rtime = row  
+    thedate = datetime.datetime(*time.strptime("%d %d" % (int(rdate), int(rtime)), '1%y%m%d %H%M%S')[:6])
+    if datetime.datetime.now() - thedate > datetime.timedelta(hours=12):
+        haenger[table] = haenger.get(table, 0) + 1
+    offen[table] = offen.get(table, 0) + 1
+
+if sys.argv[-1] == "config":
+
+    print "graph_title Vorgaenge SoftM Schnittstellen (mit TS)"
+    print 'graph_vlabel Zeilen'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    for table in tables.keys():
+        print "%sopen.label Unbearbeitet %s" % (table, table)
+        print "%sstale.label Haenger %s" % (table, table)
+        print "%sstale.warning 0" % table
+        print "%sstale.critical 0" % table
+else:
+    for table in tables.keys():
+        print "%sopen.value %d" % (table, offen[table])
+        print "%sstale.value %d" % (table, haenger[table])
+    
+        

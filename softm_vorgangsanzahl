@@ -1,0 +1,49 @@
+#!/usr/local/bin/python
+
+"""Munit Plugin fuer die Anzahl bestimmter Vorgaene in SoftM."""
+
+import anydbm
+import httplib
+import urllib
+import os
+import sys
+import time
+import simplejson as json
+
+tables = {'AuftrPos': "SELECT COUNT(*) FROM AAK00, AAP00 WHERE AKAUFN=APAUFN AND APSTAT<>'X' AND AKSTAT<>'X'",
+          'BestellPos': "SELECT COUNT(*) FROM EBP00 WHERE BPSTAT<>'X'",
+          'LsPos': "SELECT COUNT (*) FROM ALN00 WHERE LNLFSN>0 AND LNSTAT<>'X'",
+          'RgPos': "SELECT COUNT(*) FROM AFU00",
+          }
+          
+def query(sqlstr):
+    param = urllib.quote(sqlstr)
+    conn = httplib.HTTPConnection("localhost:8000")
+    conn.request("GET", "/select?query=" + param)
+    response = conn.getresponse()
+    if response.status != 200:
+        errorinfo = response.read()
+        raise RuntimeError("Server Error: %r" % errorinfo)
+    return json.loads(response.read())
+
+
+data = {}
+for name, querystr in tables.items():
+  rows = query(querystr)
+  data[name] = rows[0][0]
+        
+if sys.argv[-1] == "config":
+    print "graph_title SoftM Anzahl neuer Positionen"
+    print 'graph_vlabel Neue Pos. pro Minute'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    for name in sorted(data.keys()):
+      print "%s.label %s" % (name, name)
+      print "%s.graph_period minute" % (name)
+      print "%s.type COUNTER" % (name)
+                
+else:
+    for name in sorted(data.keys()):
+        print "%s.value %d" % (name, data[name])
+    
+        

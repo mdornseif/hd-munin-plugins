@@ -1,0 +1,47 @@
+#!/usr/local/bin/python
+
+"""Munit Plugin fuer die Anzahl bestimmter Vorgaene in SoftM."""
+
+import anydbm
+import httplib
+import urllib
+import os
+import sys
+import time
+import simplejson as json
+
+max_time_in_schnittstelle = (24*60*60)+1 # == 24h
+
+tables = {'AuftrPos': "SELECT COUNT(*) FROM AAK00, AAP00 WHERE AKAUFN=APAUFN AND APSTAT<>'X' AND APKZVA=0 AND (APMNG-APMNGF-APMNGG) > 0 AND AKSTAT<>'X' AND AKKZVA=0",
+          'BestellPos': "SELECT COUNT(*) FROM EBP00 WHERE BPSTAT<>'X' AND BPKZAK=0",
+          'KommiPos': "SELECT COUNT (*) FROM ALN00 WHERE LNLFSN = 0 AND LNSTAT='' AND LNKZV2 = 0",
+          }
+          
+def query(sqlstr):
+    param = urllib.quote(sqlstr)
+    conn = httplib.HTTPConnection("localhost:8000")
+    conn.request("GET", "/select?query=" + param)
+    response = conn.getresponse()
+    if response.status != 200:
+        errorinfo = response.read()
+        raise RuntimeError("Server Error: %r" % errorinfo)
+    return json.loads(response.read())
+
+
+data = {}
+for name, querystr in tables.items():
+  rows = query(querystr)
+  data[name] = rows[0][0]
+        
+if sys.argv[-1] == "config":
+    print "graph_title SoftM Anzahl offener Positionen"
+    print 'graph_vlabel offene Positionen'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    for name in sorted(data.keys()):
+      print "%s.label %s" % (name, name)
+else:
+    for name in sorted(data.keys()):
+        print "%s.value %d" % (name, data[name])
+    
+        

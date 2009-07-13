@@ -1,0 +1,50 @@
+#!/usr/local/bin/python
+
+# tested with HP Color LaserJet 4700, 4250 and 1320
+# also tested with Brother HL-5270
+
+import urllib2
+import re
+import sys
+import os.path
+
+hostname = '_'.join(os.path.basename(sys.argv[0]).split('_')[1:])
+try:
+    # HP Color LaserJet 4700/4250
+    page = urllib2.urlopen('http://%s/hp/device/this.LCDispatcher?nav=hp.Usage' % hostname).read()
+    tray_re = re.compile(r'([^<>]*Tray[^<>]*).*?>(\d+)<', re.DOTALL)
+except urllib2.HTTPError:
+    # HP Color LaserJet 1320
+    try:
+        page = urllib2.urlopen('http://%s/hp/device/info_configuration.html' % hostname).read()
+        tray_re = re.compile(r'(Total Pages Printed:[^<>]*).*?>\s*(\d+)\s*<', re.DOTALL)
+    except urllib2.HTTPError:
+        # Brother HL-5270
+        page = urllib2.urlopen('http://%s/printer/maininfo.html' % hostname).read()
+        tray_re = re.compile(r'(Page&#32;Count)</DD></TD><TD>(\d+)</TD></TR>', re.DOTALL)
+
+counters = re.findall(tray_re, page)
+
+def cleanname(text):
+    return re.sub('[^a-zA-Z0-9]+', '', text).lower()
+
+
+if sys.argv[-1] == "config":
+    print "graph_title printed pages: %s" % hostname
+    print 'graph_vlabel pages'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category printer'
+    print 'graph_info This graph shows the number of pages printed per day.'
+    
+    for counter in counters:
+        print '%s.label %s' % (cleanname(counter[0]), counter[0].replace('&#32;', ' '))
+        print '%s.type GAUGE' % (cleanname(counter[0]),)
+        if counter == counters[0]:
+            # first loop
+            print '%s.draw LINE' % (cleanname(counter[0]),)
+        else:
+            print '%s.draw STACK' % (cleanname(counter[0]),)
+
+else:
+    for counter in counters:
+        print "%s.value %s" % (cleanname(counter[0]), counter[1])

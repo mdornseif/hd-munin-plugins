@@ -1,0 +1,76 @@
+#!/usr/local/bin/python
+
+"""Ruft Werte, wie Temperatur und Helligkeit von mehreren Mobotix-Kameras ab."""
+
+import urllib2
+import re
+import sys
+import os.path
+from time import sleep
+
+var = 'Innentemperatur'
+data_re = re.compile('%s[^>]*</td><td[^>]*>(\d+)' % var, re.DOTALL)
+name_re = re.compile('%s[^>]*</td><td[^>]*>([^<]*)' % 'Kameraname' , re.DOTALL)
+
+if os.path.basename(sys.argv[0]).startswith('mobotixlux'):
+    var = 'Beleuchtung'
+    data_re = re.compile('%s[^>]*</td><td.*>(\d+) lux' % var, re.DOTALL)
+
+titleend = ' '.join(os.path.basename(sys.argv[0]).split('_')[1:])
+
+def cleanname(text):
+    return re.sub('[^a-zA-Z0-9]+', '', text.split('.')[0]).lower().strip()
+
+def readhost(name):
+    try:
+        page = urllib2.urlopen('http://%s/control/camerainfo' % name).read()
+        data = re.findall(data_re, page)
+    except urllib2.URLError:
+        data = None
+    
+    if sys.argv[-1] == "config":
+        match = name_re.search(page)
+        if match:
+            print "%s.label %s" % (cleanname(name), match.group(1))
+        else:
+            print "%s.label %s" % (cleanname(name), name)
+    else:
+        if data:
+            # catch sunlight brightness (up to 1500)
+            if int(data[0]) > 1500:
+                data[0] = '1500'
+            print "%s.value %s" % (cleanname(name), data[0])
+        else:
+            print "%s.value -" % (cleanname(name))
+
+
+hostnames = os.environ.get('hostnames', 'mobotix13.local.hudora.biz mobotix26.local.hudora.biz').split()
+
+if sys.argv[-1] == "config":
+    print 'graph_category sensors'
+    if var == 'Innentemperatur':
+        print 'graph_title Mobotix housing temperature %s' % titleend
+        print 'graph_vlabel celsius'
+        print 'graph_info This graph shows the temperature INSIDE the cameras.'
+    if var == 'Beleuchtung':
+        print 'graph_title Mobotix brightness %s' % titleend
+        print 'graph_vlabel lux'
+    
+pidlist = []
+for hostname in hostnames:
+    pid = os.fork()
+    if pid:
+        # we are the parent
+        pidlist.append(pid)
+        sleep(0.5)
+    else:
+        # we are the child
+        readhost(hostname)
+        sys.exit(0)
+    
+# we are the parent
+# make sure the child process gets cleaned up
+for pid in pidlist:
+    os.waitpid(pid, 0) 
+        
+        

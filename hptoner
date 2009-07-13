@@ -1,0 +1,42 @@
+#!/usr/local/bin/python
+
+# tested with HP Color LaserJet 4700, LaserJet 4250 and HP LaserJet 1320
+
+import urllib2
+import re
+import sys
+import os.path
+
+tray_re = re.compile(r'>([^<>]*(Cartridge|Image Transfer Kit|Image Fuser Kit|Maintenance Kit)[^<>]*).*?>\s*(\d+)%<', re.DOTALL)
+hostname = '_'.join(os.path.basename(sys.argv[0]).split('_')[1:])
+try:
+    # HP Color LaserJet 4700 and LaserJet 4250
+    page = urllib2.urlopen('http://%s/hp/device/this.LCDispatcher?nav=hp.Supplies' % hostname).read()
+except urllib2.HTTPError:
+    # HP LaserJet 1320
+    page = urllib2.urlopen('http://%s/hp/device/info_suppliesStatus.html' % hostname).read()
+
+counters = re.findall(tray_re, page)
+
+def cleanname(text):
+    return re.sub('[^a-zA-Z0-9]+', '', text).lower().strip()
+
+
+if sys.argv[-1] == "config":
+    print "graph_title consumed supplies: %s" % hostname
+    print 'graph_vlabel percent'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category printer'
+    print 'graph_info This graph shows the percentage of printer consumables used.'
+        
+    for counter in counters:
+        print "%s.label %s" % (cleanname(counter[0]), counter[0].strip())
+        print "%s.warning 99" % (cleanname(counter[0]),)
+        print "%s.critical 100" % (cleanname(counter[0]),)
+else:
+    for counter in counters:
+        try:
+            print "%s.value %s" % (cleanname(counter[0]), 100-int(counter[2]))
+        except:
+            print "%s.value -" % (cleanname(counter[0]),)
+        

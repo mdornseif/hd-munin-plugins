@@ -1,0 +1,32 @@
+#!/usr/local/bin/python
+
+import sys
+import os
+import re
+
+dirs = [('/usr/local/maeuler/archive/In/BORD/', 'BORD'),
+        ('/usr/local/maeuler/archive/Out/POD/', 'POD'),
+        ('/usr/local/maeuler/archive/Out/ENTL/', 'ENTL'),
+        ('/usr/local/maeuler/archive/Out/STAT/', 'STAT'),
+        ('/usr/local/maeuler/archive/Out/FAKT/', 'FAKT'),
+       ]
+
+def cleanname(text):
+    return re.sub('[^a-zA-Z0-9_]+', '', text).lower()
+
+if sys.argv[-1] == "config":
+    print "graph_title new files in dirs"
+    print 'graph_vlabel count'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other' 
+    print 'graph_period minute'
+
+    for dirpath, dirname in dirs:
+        print "%s.label %s" % (cleanname(dirname), dirname)
+        print '%s.type COUNTER' % (cleanname(dirname))
+
+else:
+    for dirpath, dirname in dirs:
+        filecount = len(os.listdir(dirpath))
+        print "%s.value %s" % (cleanname(dirname), filecount)
+

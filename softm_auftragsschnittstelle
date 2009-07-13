@@ -1,0 +1,68 @@
+#!/usr/local/bin/python
+
+"""Munin Plugin fuer die SoftM Auftragsschnittstelle udn andere Schnittstellen ohne Timestamp"""
+
+import httplib
+import os
+import sys
+import time
+import anydbm
+import urllib
+import simplejson as json
+
+max_time_in_schnittstelle = (24*60*60)+1 # == 24h
+
+db = anydbm.open('/tmp/munin_auftragsschnittstelle_cache.db', 'c')
+
+tables = {'ABK00': "SELECT BKVGNR, BKKZBA, BKDFSL FROM ABK00 WHERE BKSTAT<>'X'",
+          'ISR00': "SELECT IRKBNR, IRSTAT, IRDFSL FROM ISR00 WHERE IRSTAT<>'X'",
+          'ISB00': "SELECT IBINFO, IBSTAT, IBDFSL FROM ISB00 WHERE IBSTAT<>'X'"
+          }
+          
+
+def execute(sqlstr):
+    param = urllib.quote(sqlstr)
+    conn = httplib.HTTPConnection("localhost:8000")
+    conn.request("GET", "/select?query=" + param)  
+    response = conn.getresponse()
+    if response.status != 200:   
+        errorinfo = response.read()
+        raise RuntimeError("Server Error: %r" % errorinfo)
+    return json.loads(response.read())
+
+
+haenger = {}
+offen = {}
+for table, query in tables.items():
+  rows = execute(query)
+  haenger[table] = 0
+  offen[table] = 0
+  for row in rows:
+    vorgang, status, dfsl = row  
+    offen[table] += 1
+    if str(row) in db:
+        firstseen = int(db[str(row)])
+        if time.time() - firstseen > max_time_in_schnittstelle:
+            haenger[table] += 1
+    else:
+        db[str(row)] = str(int(time.time()))
+
+        
+if sys.argv[-1] == "config":
+    print "graph_title Vorgaenge in SoftM Schnittstellen (ohne TS)"
+    print 'graph_vlabel Zeilen'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    for table in tables.keys():
+      print "%sopen.label Unbearbeitet %s" % (table, table)
+      print "%sstale.label Haenger %s" % (table, table)
+      print "%sstale.warning 0" % table
+      print "%sstale.critical 0" % table   
+else:
+    for table in tables.keys():
+        print "%sopen.value %d" % (table, offen[table])
+        print "%sstale.value %d" % (table, haenger[table])
+    
+        
+
+os.system("chmod 666 /tmp/munin_auftragsschnittstelle_cache.*")

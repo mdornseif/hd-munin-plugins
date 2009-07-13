@@ -1,0 +1,37 @@
+#!/usr/local/bin/python
+
+import os
+import sys
+from subprocess import call, Popen, STDOUT, PIPE
+
+command = 'echo "SELECT ixPriority, COUNT(*) FROM Bug WHERE fOpen=1 GROUP BY ixPriority;" | /usr/local/bin/mysql -u fogbugz -pc0rebugz fogbugz  | sort -n'
+
+p =  Popen(command,
+           shell=True,
+           stdout=PIPE,
+           stderr=STDOUT)
+
+tickets = {}
+for line in p.stdout:
+    line = line.strip()
+    if not line or line.startswith('ixPriority') or line.startswith('-'):
+        continue
+    if len(line.split()) == 2:
+        prio, count = line.split()
+    else:
+        raise RuntimeError(repr(line))
+    tickets[int(prio)] = int(count)
+
+if sys.argv[-1] == "config":
+    print "graph_title open fogbugz tickets by priority"
+    print 'graph_vlabel tickets'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    #print 'graph_info This graph shows the percentage of printer consumables used.'
+        
+    for prio in tickets.keys():
+        print "p%d.label priority %d" % (prio, prio)
+else:
+    for prio in tickets.keys():
+        print "p%d.value %d" % (prio, tickets[prio])
+        
