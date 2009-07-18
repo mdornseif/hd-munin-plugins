@@ -1,0 +1,66 @@
+#!/usr/local/bin/python
+
+"""Returns the number om milliseconds it took to access an url."""
+
+import urllib2
+import sys
+import os
+import os.path
+import signal
+import time
+import simplejson as json
+
+def main():
+    """Contains all usefull work."""
+
+    dbname = '_'.join(os.path.basename(sys.argv[0]).split('_')[1:])
+    if 'url' in os.environ:
+        url = os.environ['url']
+    else:
+       url = "http://127.0.0.1:5984/%s/" % dbname
+    if sys.argv[-1] == "config":
+        print "graph_title couchdb %s" % dbname
+        print 'graph_vlabel counter'
+        print 'graph_args --lower-limit 0'
+        print 'graph_category network'
+        print 'disk_size.label disk_size'
+        print 'update_seq.label update_seq'
+        print 'purge_seq.label purge_seq'
+        print 'doc_count.label doc_count'
+        print 'doc_del_count.label doc_del_count'
+        print 'update_seq.type COUNTER'
+        print 'purge_seq.type COUNTER'
+        print 'doc_count.type COUNTER'
+        print 'doc_del_count.type COUNTER'
+        print 'compact_running.label compact_running'
+
+    else:
+        # ensure there is a timeout after 10 seconds
+        def handler(signum, frame):
+            raise IOError, "Timeout"
+        signal.signal(signal.SIGALRM, handler)
+        signal.alarm(10)
+        
+        start = time.time()
+        try:
+            data = urllib2.urlopen(url).read()
+        except:
+            data = "{}"
+            delta = 10
+        else:
+            delta = time.time() - start
+        signal.alarm(0)
+        delta = int(delta*1000)
+        print "requesttime.value %s" % delta
+        d = json.loads(data)
+        print "update_seq.value %d" % d.get('update_seq',0)
+        print "disk_size.value %d" % (d.get('disk_size',0)//1024//1024)
+        print "purge_seq.value %d" % d.get('purge_seq',0)
+        print "doc_count.value %d" % d.get('doc_count',0)
+        print "doc_del_count.value %d" % d.get('doc_del_count',0)
+        if d.get('compact_running',0):
+            print "compact_running.value 1"
+        else:
+            print "compact_running.value 0"
+
+main()
