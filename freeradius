@@ -1,0 +1,64 @@
+#!/usr/local/bin/perl
+
+# from http://munin.projects.linpro.no/attachment/wiki/plugin-freeradius/freeradius?format=raw
+
+#
+# simple monitor for use with monin & freeradius
+#
+# 
+#%# family=auto
+#%# capabilities=autoconf
+
+my $ret = undef;
+
+if ( exists $ARGV[0] and $ARGV[0] eq "autoconf" ) {
+    print "yes\n";
+    exit 0;
+}
+
+if ( exists $ARGV[0] and $ARGV[0] eq "config" )
+{
+
+    print 
+    	"graph_title FreeRADIUS Auth Log Parser\n",
+	"graph_category FreeRADIUS\n",
+	"graph_args --base 1000 -l 0\n",
+	"graph_vlabel Auth Counters / \${graph_period}\n",
+
+	"auth_request.label Authentication Requested\n",
+	"auth_request.type DERIVE\n",
+	"auth_request.max 3000\n",
+	"auth_request.min 0\n",
+
+	"auth_accept.label Authentication Accepted\n",
+	"auth_accept.type DERIVE\n",
+	"auth_accept.max 3000\n",
+	"auth_accept.min 0\n",
+
+	"auth_reject.label Authentication Rejected\n",
+	"auth_reject.type DERIVE\n",
+	"auth_reject.max 3000\n",
+	"auth_reject.min 0\n";
+
+	exit 0;
+}
+
+open(LOG,"/var/log/radius.log") or 
+    die "auth_request.value 0\nauth_accept.value 0\nauth_reject.value 0\n";
+
+my ($auth_request,$auth_accept,$auth_accept) = (0,0,0);
+
+while (<LOG>){
+
+    if ( /Login/ ) { $auth_request ++ }
+    if ( /Login OK/ ) { $auth_accept ++ }
+    if ( /Login incorrect/ ) { $auth_reject ++ }
+
+}
+
+close (LOG);
+
+print   "auth_request.value $auth_request\n",
+	"auth_accept.value $auth_accept\n",
+	"auth_reject.value $auth_reject\n";
+
