@@ -1,0 +1,38 @@
+#!/usr/local/bin/python
+"""Munin Plugin fuer myPL statistiken"""
+
+import re
+import os
+import sys
+import tempfile
+import datetime
+os.environ['PYTHON_EGG_CACHE'] = tempfile.gettempdir() + '/egg_cache'
+
+import httplib2
+
+import simplejson
+import socket
+
+conn = httplib2.Http()
+response, content = conn.request('http://hurricane.local.hudora.biz:8000/statistics')
+data = simplejson.loads(content)
+
+# {'provpipeline_articles': 30,
+# 'provpipeline_processing': 0, 'provpipeline_new': 73, 
+# 'provlists_prepared': 0}
+
+keys = ['units', 'products']
+
+if sys.argv[-1] == "config":
+    print "host_name mypl.service"
+    print "graph_title myPL/kernelE Aelteste Vorgaenge"
+    print 'graph_vlabel Stunden'
+    print 'graph_args --lower-limit 0'
+    print 'graph_category other'
+    for name in keys:
+        print "%s.label %s" % (name, name)
+else:
+    for name in keys:
+        print "%s.value %d" % (name, data[name])
+    
+sys.exit(0)
