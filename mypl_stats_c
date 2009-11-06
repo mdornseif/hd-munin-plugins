@@ -33,9 +33,13 @@ if sys.argv[-1] == "config":
         print "%s.label %s" % (name, name)
 else:
     for name in keys:
-        d = datetime.datetime(*map(int, re.split('[^\d]', data[name])[:-1]))
-        d = datetime.datetime.now() - d
-        d = (d.days * 24) + (d.seconds / 3600)
+        d = data[name]
+        if d:
+            d = datetime.datetime(*map(int, re.split('[^\d]', d)[:-1]))
+            d = datetime.datetime.now() - d
+            d = (d.days * 24) + (d.seconds / 3600)
+        else:
+            d = 0
         print "%s.value %d" % (name, int(d))
     
 sys.exit(0)
