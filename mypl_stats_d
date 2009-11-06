@@ -25,7 +25,7 @@ keys = ['units', 'products']
 
 if sys.argv[-1] == "config":
     print "host_name mypl.service"
-    print "graph_title myPL/kernelE Aelteste Vorgaenge"
+    print "graph_title myPL/kernelE Belegung"
     print 'graph_vlabel Stunden'
     print 'graph_args --lower-limit 0'
     print 'graph_category other'
