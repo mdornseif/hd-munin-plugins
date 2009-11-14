@@ -31,7 +31,7 @@ fi
 VHOST=${vhost:-"/"}
 QUEUES=$(sudo rabbitmqctl list_queues -p $VHOST name | \
 		grep -v "^test" | grep -v '^Listing' | \
-		grep -v 'done\.$' | perl -npe 's/[#.]/_/g;' )
+		grep -v 'done\.$' | perl -npe 's/[#.-]/_/g;' )
  
 if [ "$1" = "config" ]; then
         QUEUE_WARN=${queue_warn:-100}
@@ -70,5 +70,5 @@ fi
 # "value" subfield for every data field.
 
 sudo rabbitmqctl list_queues -p $VHOST name consumers | perl -npe 's/[#.]/_/g;' | \
-	grep -v "^Listing" | grep -v "done.$" | \
+	grep -v "^test" | grep -v "^Listing" | grep -v "done.$" | \
 	perl -nle'($q, $s) = split; print("$q.value $s")'
