@@ -1,6 +1,13 @@
 #!/usr/local/bin/python
 
-"""Returns the number om milliseconds it took to access an url."""
+"""Graphs the number of active jobs on a cups Server.
+
+Call with the name of your CUPS-Server in the filename.
+e.g. cupsactivejobs_printserver.internal
+
+"""
+
+# Created 2008 by Maximillian Dornseif
 
 import urllib2
 import sys
@@ -11,10 +18,9 @@ import signal
 import time
 
 def main():
-    """Contains all usefull work."""
+    """Contains all useful work."""
 
     hostname = '.'.join(os.path.basename(sys.argv[0]).split('_')[1:])
-    name = hostname.replace('.', '_')
     name = hostname.replace('.', '_')
     if 'url' in os.environ:
         url = os.environ['url']

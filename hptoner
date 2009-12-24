@@ -1,5 +1,7 @@
 #!/usr/local/bin/python
 
+# Created 2006, 2007, 2008 by Maximillian Dornseif
+
 # tested with HP Color LaserJet 4700, LaserJet 4250 and HP LaserJet 1320
 
 import urllib2

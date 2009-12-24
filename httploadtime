@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-"""Returns the number om milliseconds it took to access an url."""
+"""Returns the number of milliseconds it took to access an url."""
 
 import urllib2
 import sys
@@ -10,10 +10,9 @@ import signal
 import time
 
 def main():
-    """Contains all usefull work."""
+    """Contains all useful work."""
 
     hostname = '.'.join(os.path.basename(sys.argv[0]).split('_')[1:])
-    name = hostname.replace('.', '_')
     name = hostname.replace('.', '_')
     if 'url' in os.environ:
         url = os.environ['url']

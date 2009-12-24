@@ -1,5 +1,9 @@
 #!/usr/local/bin/python
 
+"""graph Ubiquiti Networks Nano Station RX/TX rates using SNMP"""
+
+# Created 2009 by Maximillian Dornseif
+
 import os
 import os.path
 import sys
@@ -13,7 +17,6 @@ if sys.argv[-1] == "config":
     print 'graph_vlabel dbm'
     # print 'graph_args --lower-limit 0'
     print 'graph_category Network'
-    #print 'graph_info This graph shows the percentage of printer consumables used.'
         
     print "rx.label Signalstaerke"
     print "tx.label Signalstaerke"

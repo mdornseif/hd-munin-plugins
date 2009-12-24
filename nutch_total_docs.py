@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+# Created 2009 by Olaf Wozniak for Hudora
+
 import sys
 import httplib2
 import re

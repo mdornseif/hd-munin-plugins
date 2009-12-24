@@ -1,17 +1,27 @@
 #!/usr/local/bin/python
 
-"""Returns the number om milliseconds it took to access an url."""
+"""This graphs Information about a CouchDB database.
 
-import urllib2
-import sys
+Server must be located at http://127.0.0.1:5984/ or location must be given
+with the "url" environment variable.
+
+The database to be examined must be given in the plugin name.
+E.g.; 'couchdb_testdatabase'.
+
+"""
+
+# Created this code in early 2009 by Maximillian Dornseif
+
 import os
 import os.path
 import signal
-import time
 import simplejson as json
+import sys
+import time
+import urllib2
 
 def main():
-    """Contains all usefull work."""
+    """Contains all useful work."""
 
     dbname = '_'.join(os.path.basename(sys.argv[0]).split('_')[1:])
     if 'url' in os.environ:

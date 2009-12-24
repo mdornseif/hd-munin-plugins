@@ -1,5 +1,7 @@
 #!/usr/local/bin/python
 
+# Created in 2008 by Maximillian Dornseif
+
 import os
 import sys
 from subprocess import call, Popen, STDOUT, PIPE

@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+"""Graphs the age of the newest index segment on a nutch instance.
+Needs statistics.jsp installed on the nutch server."""
+
+# Created 2009 by Olaf Wozniak for Hudora
+
 import sys
 import httplib2
 import re

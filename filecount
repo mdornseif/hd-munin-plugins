@@ -1,5 +1,11 @@
 #!/usr/local/bin/python
 
+"""Checks the number of files in certain directories
+- currently full of ugly hardcoding"""
+
+# Created in 2008 by Maximillian Dornseif
+
+
 import sys
 import os
 import re

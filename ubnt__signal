@@ -1,5 +1,9 @@
 #!/usr/local/bin/python
 
+"""graph Ubiquiti Networks Nano Station signal strength using HTTP."""
+
+# Created by Maximillian Dornseif in 2009
+
 import os
 import os.path
 import sys

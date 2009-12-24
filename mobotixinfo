@@ -1,6 +1,8 @@
 #!/usr/local/bin/python
 
-"""Ruft Werte, wie Temperatur und Helligkeit von mehreren Mobotix-Kameras ab."""
+"""Ruft werte, wie Temperatur und Helligkeit von mehreren Mobotix-Kameras ab."""
+
+# Created 2007, 2008 bei Maximillian Dornseif
 
 import urllib2
 import re
