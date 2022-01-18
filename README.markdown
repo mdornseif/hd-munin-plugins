@@ -1,3 +1,5 @@
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 = Collected Munin Plugins =
 
 This is collection of [Munin-Plugins][0] we use internally at Hudora. Most
